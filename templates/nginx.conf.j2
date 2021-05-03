@@ -1,0 +1,17 @@
+upstream nomad {
+  server 127.0.0.1:4646;
+  keepalive 15;
+}
+
+server {
+  listen 80;
+
+  auth_basic "Restricted Access";
+  auth_basic_user_file {{ nginx_basic_auth_file }}
+
+  location / {
+    auth_basic on;
+    proxy_pass http://nomad;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+}

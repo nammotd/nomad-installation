@@ -1,0 +1,20 @@
+---
+- name: ensure awscli installed
+  ansible.builtin.apt:
+    name: awscli
+    state: present
+
+- name: create docker-credential scripts
+  ansible.builtin.template:
+    src: docker-credential.sh.j2
+    dest: "{{ docker_credential_script_path }}"
+
+- name: allow file execution
+  ansible.builtin.file: 
+    dest: "{{ docker_credential_script_path }}"
+    mode: a+x
+
+- name: create docker.json
+  ansible.builtin.template:
+    src: docker-config.json.j2
+    dest: "{{ nomad_docker_config }}"

@@ -1,0 +1,20 @@
+---
+data_dir: "/opt/nomad/data/"
+bind_addr: "0.0.0.0/0"
+client_enabled: true
+client_servers: ["127.0.0.0:4647"]
+nomad_docker_config: "/etc/docker/nomad-docker.json"
+ecr_name: ""
+ecr_region: "ap-southeast-1"
+docker_credential_script_path: "/usr/local/bin/docker-credential-ecr-login"
+nginx_basic_auth_file: "/etc/nginx/.htpassswd"
+nginx_basic_auth_user: ""
+nginx_basic_auth_pass: ""
+acl_enable: true
+acl_list:
+  - {name: deployer, filename: deployer.hcl, description: "Permission for Ci system"}
+  - {name: anonymous, filename: anonymous.hcl, description: "Permission for anonymous"}
+token_list:
+  - {name: drone, policy: deployer}
+cni_version: 0.9.1
+cni_url: https://github.com/containernetworking/plugins/releases/download/v{{ cni_version }}/cni-plugins-linux-amd64-v{{ cni_version }}.tgz

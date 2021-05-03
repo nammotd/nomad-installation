@@ -1,0 +1,18 @@
+- name: install Nginx
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nginx
+    - apache2-utils
+
+- name: config nginx for Nomad webui
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-enabled/nomad-webui.conf
+    backup: yes
+
+- name: config basic auth for nginx
+  ansible.builtin.shell: htpasswd -c -b {{ nginx_basic_auth_file }} {{ nginx_basic_auth_user }} {{ nginx_basic_auth_pass }}
+  notify:
+    - restart nginx

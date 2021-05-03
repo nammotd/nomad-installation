@@ -1,0 +1,23 @@
+---
+- name: Check if CNI is installed
+  stat:
+    path: /opt/cni/bin
+    get_attributes: no
+    get_mime: no
+  register: cni_stat
+
+- block:
+  - name: Create CNI directory
+    file:
+      path: /opt/cni/bin
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: Download CNI
+    get_url: url={{ cni_url }} dest=/tmp/cni.tgz
+
+  - name: Extract CNI
+    unarchive: src=/tmp/cni.tgz dest=/opt/cni/bin/ copy=no owner=root group=root mode=0755
+  when: not cni_stat.stat.exists or force_install is defined

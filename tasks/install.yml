@@ -1,0 +1,41 @@
+---
+- name: fetch Hashicorp GPG key
+  shell: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+
+- name: Add specified repository into sources list
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main
+    state: present
+
+- name: Install Nomad
+  apt:
+    name: nomad
+    state: present
+    autoclean: yes
+
+- name: adjust nomad default configuration file
+  ansible.builtin.template:
+    src: nomad.hcl.j2
+    dest: /etc/nomad.d/nomad.hcl
+    backup: yes
+  notify:
+    - restart nomad
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Check bootstrap exists
+  stat:
+    path: /etc/nomad.d/bootstrap
+  register: stat_result
+  when: "'nomad_leaders' in group_names"
+
+- name: init bootstrap management token
+  ansible.builtin.shell:
+    cmd: nomad acl bootstrap > /etc/nomad.d/bootstrap
+  when: "'nomad_leaders' in group_names"
+
+- name: init bootstrap management token
+  ansible.builtin.shell:
+    cmd: echo "export NOMAD_TOKEN=$(awk '/Secret ID/ {print $4}' /etc/nomad.d/bootstrap)" >> ~/.bashrc
+  when: "'nomad_leaders' in group_names"

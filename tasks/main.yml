@@ -1,0 +1,15 @@
+---
+- import_tasks: install.yml
+  tags: ["install"]
+
+- import_tasks: config_nginx_webui.yml
+  tags: ["nginx_webui"]
+
+- import_tasks: private_docker_fetch.yml
+  tags: ["enable_private_docker_fetch"]
+
+- import_tasks: generate_acl.yml
+  tags: ["generate_acl"]
+
+- import_tasks: install_cni.yml
+  tags: ["install_cni"]

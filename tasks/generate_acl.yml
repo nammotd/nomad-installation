@@ -1,0 +1,55 @@
+---
+- name: Create a directory to save policies and token
+  ansible.builtin.file:
+    path: /etc/nomad.d/acl
+    state: directory
+    owner: nomad
+    group: nomad
+  when: "'nomad_leaders' in group_names"
+
+- name: Upload Acl policies
+  copy:
+    src: "files/{{ item.filename }}"
+    dest: /etc/nomad.d/acl
+    owner: "nomad"
+    group: "nomad"
+  when: "'nomad_leaders' in group_names"
+  loop: "{{ acl_list }}"
+
+- name: Get bootstrap token
+  ansible.builtin.shell:
+    cmd: "cat /etc/nomad.d/bootstrap |grep Secret|awk '{print $4}'"
+    chdir: /etc/nomad.d/acl
+  register: management_token
+  when: "'nomad_leaders' in group_names"
+
+- name: Update Acl policies
+  ansible.builtin.shell:
+    cmd: "nomad acl policy apply -token={{ management_token['stdout'] }} -description '{{ item.description }}' {{ item.name }} {{ item.filename }}"
+    chdir: /etc/nomad.d/acl
+  when: "'nomad_leaders' in group_names"
+  loop: "{{ acl_list }}"
+
+- name: Check tokens exist
+  stat:
+    path: /etc/nomad.d/acl/{{ item.name }}_token
+  register: tokens_exist
+  when: "'nomad_leaders' in group_names"
+  loop: "{{ token_list }}"
+
+- name: Create tokens
+  ansible.builtin.shell:
+    cmd: "nomad acl token create -token={{ management_token['stdout'] }} -global -name={{ item.name }} -policy={{ item.policy }} > {{ item.name }}_token"
+    chdir: /etc/nomad.d/acl
+  loop: "{{ token_list }}"
+  loop_control:
+    index_var: index
+  when: "'nomad_leaders' in group_names" and tokens_exist.results[index].stat.exists
+
+- name: Change tokens' owner
+  ansible.builtin.file:
+    path: /etc/nomad.d/acl/{{ item.name }}_token
+    owner: nomad
+    group: nomad
+  loop: "{{ token_list }}"
+  when: "'nomad_leaders' in group_names"
